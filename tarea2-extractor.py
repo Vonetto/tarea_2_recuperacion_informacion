@@ -10,13 +10,16 @@ import librosa
 import numpy as np
 import logging
 
-# Configurar el logger
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def calcular_mfcc(archivo_wav, sample_rate, n_fft, hop_length, n_mfcc):
-    # Cargar el archivo de audio
+def calcular_mfcc(archivo_wav, sample_rate, n_fft, hop_length, n_mfcc, nombre_archivo):
+    """
+    Calcula los MFCC para un archivo WAV y retorna una lista de descriptores con metadata.
+    """
     samples, sr = librosa.load(archivo_wav, sr=sample_rate, mono=True)
     logging.info(f'Audio cargado: {archivo_wav}, muestras: {len(samples)}, sample_rate: {sr}')
+
+    samples = librosa.util.normalize(samples)
 
     # Calcular los MFCC
     mfcc = librosa.feature.mfcc(
@@ -27,8 +30,22 @@ def calcular_mfcc(archivo_wav, sample_rate, n_fft, hop_length, n_mfcc):
         hop_length=hop_length
     )
 
-    # Transponer para tener los descriptores como filas
-    return mfcc.T
+    mfcc = mfcc.T  # Forma: (num_frames, n_mfcc)
+
+    tiempos_inicio = librosa.frames_to_time(np.arange(len(mfcc)), sr=sr, hop_length=hop_length, n_fft=n_fft)
+
+    descriptores = []
+    for idx, frame in enumerate(mfcc):
+        frame_normalizado = (frame - np.mean(frame)) / (np.std(frame) + 1e-8)
+        descriptor = {
+            'descriptor': frame_normalizado.astype(np.float32),  
+            'archivo': nombre_archivo,
+            'inicio': tiempos_inicio[idx]
+        }
+        descriptores.append(descriptor)
+
+    return descriptores
+
 
 def tarea2_extractor(carpeta_audios_entrada, carpeta_descriptores_salida):
     if not os.path.isdir(carpeta_audios_entrada):
@@ -41,10 +58,9 @@ def tarea2_extractor(carpeta_audios_entrada, carpeta_descriptores_salida):
     # Parámetros para el cálculo de MFCC
     sample_rate = 44100
     n_fft = 2048
-    hop_length = 512
+    hop_length = 256
     n_mfcc = 20  # Dimensión de los MFCC
 
-    # Crear la carpeta de salida si no existe
     os.makedirs(carpeta_descriptores_salida, exist_ok=True)
 
     # 1. Leer los archivos con extensión .m4a en carpeta_audios_entrada
@@ -54,12 +70,9 @@ def tarea2_extractor(carpeta_audios_entrada, carpeta_descriptores_salida):
     # 2. Convertir cada archivo de audio a WAV y calcular descriptores
     for archivo_m4a in archivos_m4a:
         ruta_entrada = os.path.join(carpeta_audios_entrada, archivo_m4a)
-        # Convertir a WAV usando FFmpeg
         archivo_wav = util.convertir_a_wav(ruta_entrada, sample_rate, carpeta_descriptores_salida)
-        # Calcular los MFCC
-        descriptores = calcular_mfcc(archivo_wav, sample_rate, n_fft, hop_length, n_mfcc)
-        # Guardar los descriptores
-        nombre_descriptor = os.path.basename(archivo_m4a) + ".mfcc"
+        descriptores = calcular_mfcc(archivo_wav, sample_rate, n_fft, hop_length, n_mfcc, archivo_m4a)
+        nombre_descriptor = os.path.splitext(os.path.basename(archivo_m4a))[0] + ".pkl"
         util.guardar_objeto(descriptores, carpeta_descriptores_salida, nombre_descriptor)
         logging.info(f'Descriptores guardados para: {archivo_wav}')
 
