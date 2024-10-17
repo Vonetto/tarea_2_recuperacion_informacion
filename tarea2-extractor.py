@@ -56,7 +56,7 @@ def tarea2_extractor(carpeta_audios_entrada, carpeta_descriptores_salida):
         sys.exit(1)
 
     # Parámetros para el cálculo de MFCC
-    sample_rate = 44100
+    sample_rate = 7000
     n_fft = 2048
     hop_length = 256
     n_mfcc = 20  # Dimensión de los MFCC

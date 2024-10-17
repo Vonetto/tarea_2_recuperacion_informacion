@@ -20,7 +20,7 @@ def cargar_descriptores(carpeta_descriptores):
         descriptores.extend(lista_descriptores)
     return descriptores
 
-def tarea2_busqueda(carpeta_descriptores_Q, carpeta_descriptores_R, archivo_ventanas_similares, k=1):
+def tarea2_busqueda(carpeta_descriptores_Q, carpeta_descriptores_R, archivo_ventanas_similares, k):
     """
     Realiza la búsqueda de las ventanas más similares de R para cada ventana en Q.
     """
@@ -48,6 +48,7 @@ def tarea2_busqueda(carpeta_descriptores_Q, carpeta_descriptores_R, archivo_vent
 
     # Realizar la búsqueda
     print("Realizando búsqueda de vecinos más cercanos...")
+    print("Usando k =" + str(k))
     resultados = []
     for q in tqdm(descriptores_Q, desc="Procesando Q"):
         descriptor_q = np.array(q['descriptor'], dtype=np.float32).reshape(1, -1)
@@ -84,4 +85,4 @@ if __name__ == "__main__":
     carpeta_descriptores_R = sys.argv[2]
     archivo_ventanas_similares = sys.argv[3]
     
-    tarea2_busqueda(carpeta_descriptores_Q, carpeta_descriptores_R, archivo_ventanas_similares, k=1)
+    tarea2_busqueda(carpeta_descriptores_Q, carpeta_descriptores_R, archivo_ventanas_similares, k=10)
